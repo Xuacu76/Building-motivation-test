@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Building Motivation: The Elite Athlete Test</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-blue: #3b82f6; /* Blue 500 */
+            --dark-bg: #0f172a; /* Slate 900 */
+            --card-bg: #1e293b; /* Slate 800 */
+            --correct-green: #10b981; /* Emerald 500 */
+            --wrong-red: #ef4444; /* Red 500 */
+            --accent-orange: #f59e0b; /* Amber 500 */
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--dark-bg);
+            color: #e2e8f0;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 2rem 1rem;
+        }
+        .container {
+            max-width: 700px; /* Increased max width for review screen */
+            width: 100%;
+        }
+        .quiz-card {
+            background-color: var(--card-bg);
+            border: 2px solid #334155;
+            transition: all 0.3s ease-in-out;
+        }
+        .answer-btn {
+            background-color: #334155;
+            transition: all 0.2s ease-in-out;
+            pointer-events: auto;
+        }
+        .answer-btn:hover:not(.disabled) {
+            background-color: #475569;
+            transform: scale(1.02);
+        }
+        .answer-btn.correct {
+            background-color: var(--correct-green);
+            border-color: var(--correct-green);
+            color: var(--dark-bg);
+            font-weight: 700;
+        }
+        .answer-btn.wrong {
+            background-color: var(--wrong-red);
+            border-color: var(--wrong-red);
+            opacity: 0.7;
+        }
+        .answer-btn.disabled {
+            pointer-events: none;
+        }
+        .next-btn {
+            background-color: var(--primary-blue);
+            transition: all 0.2s ease-in-out;
+        }
+        .next-btn:hover {
+            background-color: #2563eb;
+            transform: translateY(-2px);
+        }
+        .reset-btn {
+            background-color: var(--accent-orange);
+            color: var(--dark-bg);
+            font-weight: 700;
+        }
+        .copy-btn {
+            background-color: #475569;
+            color: white;
+            transition: all 0.2s ease-in-out;
+        }
+        .copy-btn:hover {
+            background-color: #64748b;
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .progress-bar-fill {
+            transition: width 0.3s ease-in-out;
+            background-color: var(--accent-orange);
+        }
+    </style>
+</head>
+<body>
+    <div class="container mx-auto">
+        <header class="text-center mb-6">
+            <h1 class="text-4xl sm:text-5xl font-extrabold tracking-tight text-white mb-2">
+                Building Motivation Test
+            </h1>
+            <p class="text-lg text-gray-400">
+                Sharpen your competitive mindset in 20 strategic questions.
+            </p>
+        </header>
+
+        <div id="progress-bar" class="w-full h-2 rounded-full bg-slate-700 mb-6 shadow-inner">
+            <div id="progress-bar-fill" class="h-full rounded-full progress-bar-fill" style="width: 0%;"></div>
+        </div>
+
+        <div id="quiz-area" class="min-h-[400px]">
+            <!-- Question or Results will be rendered here -->
+        </div>
+    </div>
+
+    <script>
+        // Core Quiz Data including question, answers, correct key, and motivational explanation
+        const quizData = [
+            {
+                q: "1. How do you ensure consistency in training, even on 'off' days?",
+                a: "A) I focus on executing the process perfectly, regardless of how I feel.",
+                b: "B) I only push myself when I feel a burst of motivation.",
+                c: "C) I compare my performance to my peak day and get frustrated if I'm below it.",
+                correct: 'A',
+                explanation: "Focusing on **process over mood** creates self-discipline, making your performance less dependent on transient motivation or emotional state."
+            },
+            {
+                q: "2. When you face a major setback (e.g., injury or loss), how do you re-engage?",
+                a: "A) I immediately seek an easy win in a smaller event to restore confidence.",
+                b: "B) I avoid thinking about it and wait for the memory to fade.",
+                c: "C) I conduct an objective post-mortem to find specific, actionable improvements.",
+                correct: 'C',
+                explanation: "Treating setbacks as **objective data** minimizes emotional reaction, allowing you to develop a specific action plan that accelerates improvement."
+            },
+            {
+                q: "3. What drives your deepest commitment to early morning training?",
+                a: "A) The desire for media recognition and external validation from others.",
+                b: "B) The deep satisfaction of personal skill mastery and internal growth.",
+                c: "C) The fear of disappointing my coach or teammates.",
+                correct: 'B',
+                explanation: "**Intrinsic motivation**, stemming from the feeling of mastery, is the most powerful and sustainable engine for a decades-long competitive career."
+            },
+            {
+                q: "4. When setting goals for the season, what approach do you prioritize?",
+                a: "A) Setting challenging but measurable process goals (e.g., technique ratios, consistency rates).",
+                b: "B) Setting only outcome goals (e.g., winning the championship).",
+                c: "C) Setting vague goals like 'be the best.'",
+                correct: 'A',
+                explanation: "**Process goals** are fully within your control and provide daily, measurable victories, which constantly reinforce your commitment and confidence."
+            },
+            {
+                q: "5. If you struggle to execute a skill you used to master, what is your immediate reaction?",
+                a: "A) I try harder and faster, hoping brute force solves the problem.",
+                b: "B) I blame the equipment or the training environment.",
+                c: "C) I break the skill down into the smallest parts and practice each one slowly.",
+                correct: 'C',
+                explanation: "Breaking complex skills down and practicing slowly prevents frustration and ensures you are reinforcing the **correct foundational movement patterns**."
+            },
+            {
+                q: "6. How do you view failures in training?",
+                a: "A) As definitive proof that I may not be good enough.",
+                b: "B) As necessary data points that highlight areas for development.",
+                c: "C) As bad luck that is outside of my control.",
+                correct: 'B',
+                explanation: "This perspective embodies a **growth mindset**, converting frustration into curiosity about what specifically needs to be improved next."
+            },
+            {
+                q: "7. What is your strategy for handling essential but boring work (e.g., mandatory recovery or diet tracking)?",
+                a: "A) I link the boring task directly to my major competitive advantage or long-term vision.",
+                b: "B) I postpone it until the last minute or skip it when tired.",
+                c: "C) I rely on someone else (e.g., a parent or manager) to force me to do it.",
+                correct: 'A',
+                explanation: "Self-discipline means framing necessary work as a **direct pathway to your ultimate vision**, making even dull tasks feel strategically important."
+            },
+            {
+                q: "8. How do you maintain passion for the sport during long, monotonous training blocks?",
+                a: "A) I constantly look for new sports or hobbies to distract myself.",
+                b: "B) I focus only on the next hour of training without connecting it to a larger purpose.",
+                c: "C) I regularly visualize my future success and the feeling of achieving my ultimate goal.",
+                correct: 'C',
+                explanation: "Maintaining a vivid connection to your **ultimate purpose** acts as a powerful, non-negotiable motivator during periods of repetitive work."
+            },
+            {
+                q: "9. How do you choose your immediate training partners or environment?",
+                a: "A) I choose partners who are easy to beat to boost my confidence.",
+                b: "B) I choose partners who hold me accountable and push me to improve every day.",
+                c: "C) I train alone to avoid comparison and external pressure.",
+                correct: 'B',
+                explanation: "Training with strong, challenging, and **accountable partners** raises your baseline performance and normalizes high standards."
+            },
+            {
+                q: "10. When you make a critical error in competition, what does your inner monologue sound like?",
+                a: "A) 'Stay focused, learn from that one, execute the next moment.'",
+                b: "B) 'I knew I couldn't do this; I'm not mentally tough enough.'",
+                c: "C) 'It doesn't matter; this competition is already lost.'",
+                correct: 'A',
+                explanation: "**Effective self-talk** is focused on the immediate task at hand and using the error as a quick learning point, not a personal judgment."
+            },
+            {
+                q: "11. What do you do when your physical recovery is insufficient (e.g., poor sleep, soreness)?",
+                a: "A) I tough it out and push 100% intensity, believing more pain equals more gain.",
+                b: "B) I take a complete rest day and often struggle to restart training the next day.",
+                c: "C) I adjust my training volume or intensity strategically to stay consistent without breaking.",
+                correct: 'C',
+                explanation: "True commitment involves **intelligent decision-making**; adjusting volume shows dedication to long-term health and sustainable consistency."
+            },
+            {
+                q: "12. How do you leverage external rewards (money, trophies, praise)?",
+                a: "A) As the primary reason I continue to compete and sacrifice.",
+                b: "B) As a welcome bonus that confirms the value of my internal work.",
+                c: "C) I ignore them completely, believing they pollute the purity of the sport.",
+                correct: 'B',
+                explanation: "When external rewards **confirm the value of your internal commitment**, they add positive reinforcement without becoming the main reason for your sacrifice."
+            },
+            {
+                q: "13. What is the most effective way to track progress toward a long-term goal?",
+                a: "A) Reviewing daily and weekly metrics and logging reflective notes on my effort and process.",
+                b: "B) Only checking the overall outcome (e.g., ranking) once a month.",
+                c: "C) Relying on my coach or manager to tell me if I'm improving.",
+                correct: 'A',
+                explanation: "Regular review of effort and **process metrics** provides immediate feedback loops, allowing you to quickly course-correct and confirm you are putting in quality work."
+            },
+            {
+                q: "14. When a training plan is derailed (e.g., bad weather, facility closure), how do you respond?",
+                a: "A) I cancel training and view it as a wasted day.",
+                b: "B) I complain to my coach/teammates about the inconvenience.",
+                c: "C) I quickly pivot and create an alternative, high-quality workout using available resources.",
+                correct: 'C',
+                explanation: "**Adaptability** is a key mental skill; finding creative, high-quality solutions prevents a lost training day and reinforces your commitment to the plan."
+            },
+            {
+                q: "15. How do you manage energy when faced with distractions outside of sport?",
+                a: "A) I let distractions happen and try to catch up on recovery later.",
+                b: "B) I proactively structure my day and week to ensure training and recovery have protected time.",
+                c: "C) I decide I must sacrifice all social life to be dedicated.",
+                correct: 'B',
+                explanation: "**Structuring your time proactively** is self-management, protecting your recovery and ensuring that essential training energy is not wasted on preventable distractions."
+            },
+            {
+                q: "16. How do you handle feelings of nervousness or pressure before a major event?",
+                a: "A) I reframe the feeling as excitement and a sign that I care about the challenge.",
+                b: "B) I try to suppress the feeling and convince myself I don't care about the outcome.",
+                c: "C) I focus on the possibility of failure and the negative consequences.",
+                correct: 'A',
+                explanation: "Reframing nervousness as **excitement or performance energy** allows you to harness that physiological response rather than letting it derail your focus."
+            },
+            {
+                q: "17. If an opponent or competitor gets under your skin, how do you regain focus?",
+                a: "A) I retaliate or try to engage in psychological games with them.",
+                b: "B) I allow their actions to dictate my strategy and emotional state.",
+                c: "C) I intentionally narrow my attention back to my plan, cue words, and internal actions.",
+                correct: 'C',
+                explanation: "The most powerful response is to immediately narrow your focus to **what you can control**: your plan, your cues, and your effort in the present moment."
+            },
+            {
+                q: "18. What aspect of your sport is most rewarding to you, even when nobody is watching?",
+                a: "A) The applause of the crowd after a successful performance.",
+                b: "B) The feeling of performing a complex movement perfectly or achieving a new personal physical limit.",
+                c: "C) The sponsorship money or bonus payment received.",
+                correct: 'B',
+                explanation: "The **internal reward of skill mastery** is the purest form of intrinsic motivation, driving you even when public attention is absent."
+            },
+            {
+                q: "19. How do you cultivate a positive mindset outside of training?",
+                a: "A) I surround myself with people who support my goals and offer objective, constructive feedback.",
+                b: "B) I listen primarily to people who only give me positive affirmation and never challenge me.",
+                c: "C) I isolate myself entirely to maximize focus.",
+                correct: 'A',
+                explanation: "Surrounding yourself with objective, **supportive accountability** helps you maintain positive standards and addresses weaknesses before they become problems."
+            },
+            {
+                q: "20. How often do you reflect on your ultimate, long-term athletic purpose?",
+                a: "A) Only when I win a major medal or competition.",
+                b: "B) Only when I'm feeling down or considering quitting.",
+                c: "C) Regularly (daily/weekly), using it as a compass for my daily decisions and effort level.",
+                correct: 'C',
+                explanation: "Your **ultimate purpose** serves as the 'why' behind the daily 'what,' ensuring your actions are always aligned with your most important long-term vision."
+            }
+        ];
+
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let answered = false;
+        let userAnswers = []; // Array to store detailed answers for the review
+        
+        const quizArea = document.getElementById('quiz-area');
+        const progressBarFill = document.getElementById('progress-bar-fill');
+        
+        // --- Core Quiz Functions ---
+
+        function updateProgressBar() {
+            const progress = (currentQuestionIndex / quizData.length) * 100;
+            progressBarFill.style.width = `${progress}%`;
+        }
+
+        function renderQuestion() {
+            updateProgressBar();
+            
+            if (currentQuestionIndex >= quizData.length) {
+                renderResults();
+                return;
+            }
+
+            const qData = quizData[currentQuestionIndex];
+            const qNum = currentQuestionIndex + 1;
+
+            quizArea.innerHTML = `
+                <div id="question-card" class="quiz-card rounded-xl p-6 sm:p-8 shadow-2xl fade-in">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-2xl font-bold text-white">${qNum}/${quizData.length}</h2>
+                    </div>
+
+                    <p class="text-xl sm:text-2xl font-semibold mb-8 text-white">${qData.q}</p>
+
+                    <div id="answers-container" class="space-y-4">
+                        ${['A', 'B', 'C'].map(label => {
+                            // Corrected property access: qData['a'], qData['b'], qData['c']
+                            const text = qData[label.toLowerCase()].substring(3).trim();
+                            return `
+                                <button
+                                    class="answer-btn w-full text-left py-4 px-5 rounded-lg border-2 border-slate-600 font-medium disabled:opacity-100"
+                                    data-label="${label}"
+                                    onclick="selectAnswer(this, '${label}')"
+                                >
+                                    <span class="font-extrabold mr-3">${label}:</span> ${text}
+                                </button>
+                            `;
+                        }).join('')}
+                    </div>
+
+                    <div id="feedback-area" class="mt-6 hidden">
+                        <p id="explanation-text" class="p-4 rounded-lg text-sm sm:text-base border-l-4 font-medium"></p>
+                    </div>
+                    
+                    <button id="next-btn" class="next-btn w-full py-3 mt-8 rounded-lg text-lg font-bold shadow-lg disabled:opacity-50" onclick="nextQuestion()" disabled>
+                        ${qNum === quizData.length ? 'View Results' : 'Next Question'}
+                    </button>
+                </div>
+            `;
+            answered = false;
+        }
+
+        function selectAnswer(button, selectedLabel) {
+            if (answered) return;
+
+            const qIndex = currentQuestionIndex;
+            const qData = quizData[qIndex];
+            const correctLabel = qData.correct;
+            const answersContainer = document.getElementById('answers-container');
+            const nextButton = document.getElementById('next-btn');
+            const feedbackArea = document.getElementById('feedback-area');
+            const explanationText = document.getElementById('explanation-text');
+            answered = true;
+
+            // Determine if correct
+            const isCorrect = selectedLabel === correctLabel;
+
+            // Update score
+            if (isCorrect) {
+                score++;
+            }
+
+            // Store the answer for detailed review later
+            userAnswers.push({
+                qNum: qIndex + 1,
+                qIndex: qIndex,
+                selected: selectedLabel,
+                correct: correctLabel,
+                isCorrect: isCorrect
+            });
+
+            // Disable all buttons and apply colors
+            answersContainer.querySelectorAll('.answer-btn').forEach(btn => {
+                btn.classList.add('disabled');
+                const label = btn.getAttribute('data-label');
+                if (label === selectedLabel && !isCorrect) {
+                    btn.classList.add('wrong');
+                } else if (label === correctLabel) {
+                    btn.classList.add('correct');
+                }
+            });
+
+            // Show feedback
+            if (isCorrect) {
+                explanationText.innerHTML = `<span class="text-green-200">Constructive Choice!</span> ${qData.explanation}`;
+                explanationText.style.backgroundColor = 'rgba(16, 185, 129, 0.2)'; /* Emerald 500 with opacity */
+                explanationText.style.borderColor = 'var(--correct-green)';
+            } else {
+                explanationText.innerHTML = `<span class="text-red-200">Reflect and Learn.</span> ${qData.explanation}`;
+                explanationText.style.backgroundColor = 'rgba(239, 68, 68, 0.2)'; /* Red 500 with opacity */
+                explanationText.style.borderColor = 'var(--wrong-red)';
+            }
+
+            // Show feedback and enable next button
+            feedbackArea.classList.remove('hidden');
+            nextButton.disabled = false;
+        }
+
+        function nextQuestion() {
+            const questionCard = document.getElementById('question-card');
+            questionCard.classList.remove('fade-in');
+            
+            // Wait for brief fade out before changing content
+            setTimeout(() => {
+                currentQuestionIndex++;
+                renderQuestion();
+            }, 100); 
+        }
+
+        function getMotivationalMessage(score) {
+            if (score >= 18) {
+                return {
+                    title: "Elite Level: Unbreakable Motivation",
+                    message: "Your motivational foundation is incredibly strong. You possess clear vision, excellent self-talk, and a mastery-focused mindset. Continue to refine your process and commitment."
+                };
+            } else if (score >= 14) {
+                return {
+                    title: "High Performer: Consistent and Strategic",
+                    message: "You have a solid grasp of key motivational principles and make constructive choices most of the time. Focus on closing the gap in areas like consistency and utilizing setbacks for growth."
+                };
+            } else if (score >= 10) {
+                return {
+                    title: "Developing Athlete: Building Your Mindset",
+                    message: "You understand the importance of motivation, but common pitfalls (like relying on external factors or comparison) may be holding you back. Focus on process goals and positive self-talk to strengthen your foundation."
+                };
+            } else {
+                return {
+                    title: "Foundation Building: Opportunities for Growth",
+                    message: "This test highlights several key areas for massive motivational growth. Prioritize setting intrinsic, process-driven goals and changing how you react to frustration and setbacks to build elite discipline."
+                };
+            }
+        }
+
+        function copyResults() {
+            const message = getMotivationalMessage(score);
+            let copyText = "--- Elite Athlete Motivation Test Results ---\n";
+            copyText += `Total Score: ${score} / ${quizData.length} constructive answers\n\n`;
+            copyText += `[ ${message.title} ]\n`;
+            copyText += `${message.message}\n\n`;
+            copyText += "--- Detailed Question Review ---\n";
+
+            userAnswers.forEach(answer => {
+                const qData = quizData[answer.qIndex];
+                const selectedText = qData[answer.selected.toLowerCase()].substring(3).trim();
+                const correctText = qData[answer.correct.toLowerCase()].substring(3).trim();
+                const status = answer.isCorrect ? "CORRECT" : "INCORRECT (Needs Focus)";
+
+                copyText += `\n${answer.qNum}. ${qData.q}\n`;
+                copyText += `   Status: ${status}\n`;
+                copyText += `   Your Choice: ${answer.selected} - ${selectedText}\n`;
+                if (!answer.isCorrect) {
+                    copyText += `   Correct Choice: ${answer.correct} - ${correctText}\n`;
+                }
+                copyText += `   Motivation Insight: ${qData.explanation}\n`;
+            });
+            copyText += "\n----------------------------------------";
+
+            // Copy to clipboard using the recommended method
+            const tempTextArea = document.createElement('textarea');
+            tempTextArea.value = copyText;
+            document.body.appendChild(tempTextArea);
+            tempTextArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempTextArea);
+
+            // Provide visual feedback
+            const copyBtn = document.getElementById('copy-results-btn');
+            const originalText = copyBtn.textContent;
+            copyBtn.textContent = '✅ Copied to Clipboard!';
+            copyBtn.classList.add('bg-green-500');
+            copyBtn.classList.remove('bg-slate-700');
+            
+            setTimeout(() => {
+                copyBtn.textContent = originalText;
+                copyBtn.classList.remove('bg-green-500');
+                copyBtn.classList.add('bg-slate-700');
+            }, 2000);
+        }
+
+        function renderResults() {
+            updateProgressBar();
+            const result = getMotivationalMessage(score);
+
+            const reviewHtml = userAnswers.map(answer => {
+                const qData = quizData[answer.qIndex];
+                const selectedText = qData[answer.selected.toLowerCase()].substring(3).trim();
+                const statusColor = answer.isCorrect ? 'text-green-400' : 'text-red-400';
+                const statusIcon = answer.isCorrect ? '✅' : '❌';
+                const correctText = qData[answer.correct.toLowerCase()].substring(3).trim();
+
+                return `
+                    <div class="border-t border-slate-700 pt-4 mt-4 first:border-t-0">
+                        <p class="text-base font-bold mb-2 text-white">${answer.qNum}. ${qData.q}</p>
+                        <p class="text-sm ${statusColor} mb-1">
+                            ${statusIcon} Your Answer: <span class="font-semibold">${answer.selected}: ${selectedText}</span>
+                        </p>
+                        ${!answer.isCorrect ? `<p class="text-sm text-green-400 mb-2">
+                            ✅ Correct Answer: <span class="font-semibold">${answer.correct}: ${correctText}</span>
+                        </p>` : ''}
+                        <p class="text-xs text-slate-400 italic mt-1">
+                            Motivation Focus: ${qData.explanation}
+                        </p>
+                    </div>
+                `;
+            }).join('');
+
+            quizArea.innerHTML = `
+                <div id="results-card" class="quiz-card rounded-xl p-6 sm:p-8 shadow-2xl fade-in">
+                    <h2 class="text-4xl font-extrabold text-center mb-4 text-white">Test Complete!</h2>
+                    
+                    <p class="text-center mb-2 text-gray-300 font-semibold text-lg">
+                        Motivational Strengths Identified:
+                        <span class="text-5xl font-extrabold text-center block my-2" style="color: var(--accent-orange);">${score} / ${quizData.length}</span> 
+                    </p>
+
+                    <h3 class="text-xl font-bold mt-6 mb-3 text-center" style="color: var(--primary-blue);">${result.title}</h3>
+                    <p class="text-center text-gray-400 italic mb-8">${result.message}</p>
+                    
+                    <div class="flex flex-col sm:flex-row justify-center space-y-3 sm:space-y-0 sm:space-x-3 mb-8">
+                        <button id="reset-button" class="reset-btn py-3 px-6 rounded-lg text-lg shadow-lg hover:shadow-xl transition" onclick="resetQuiz()">
+                            Restart Test
+                        </button>
+                        <button id="copy-results-btn" class="copy-btn py-3 px-6 rounded-lg text-lg shadow-lg hover:shadow-xl transition bg-slate-700" onclick="copyResults()">
+                            Copy Results to Clipboard
+                        </button>
+                    </div>
+
+                    <h3 class="text-2xl font-bold mt-10 mb-4 text-white border-b border-slate-600 pb-2">
+                        Detailed Review & Insights
+                    </h3>
+                    <div id="detailed-review-container" class="max-h-96 overflow-y-auto pr-2">
+                        ${reviewHtml}
+                    </div>
+                </div>
+            `;
+        }
+
+        function resetQuiz() {
+            currentQuestionIndex = 0;
+            score = 0;
+            answered = false;
+            userAnswers = []; // Clear stored answers
+            renderQuestion();
+        }
+
+        // Initialize the quiz on page load
+        document.addEventListener('DOMContentLoaded', renderQuestion);
+    </script>
+</body>
+</html>
